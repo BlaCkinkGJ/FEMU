@@ -185,6 +185,7 @@ device models compile and run against an arm64 guest under HVF, which is enough
 to develop against and to check every mode. HVF timings are not comparable to
 KVM ones, so measure on an x86_64 Linux host.
 
+<!-- femu-untested: needs an arm64 Mac, CI runners are x86_64 -->
 ```sh
 brew install glib pixman pkg-config ninja libslirp
 mkdir build-femu && cd build-femu

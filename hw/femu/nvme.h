@@ -22,6 +22,37 @@
 #include "inc/pqueue.h"
 #include "nand/nand.h"
 
+/*
+ * Darwin's pthread.h has no spinlocks. The controller uses init, destroy,
+ * lock and unlock on a few fields, so map those onto QEMU's spinlock, which
+ * is a C11 atomic on every host.
+ */
+#ifdef __APPLE__
+#include "qemu/thread.h"
+typedef QemuSpin pthread_spinlock_t;
+static inline int pthread_spin_init(pthread_spinlock_t *l, int pshared)
+{
+    (void)pshared;
+    qemu_spin_init(l);
+    return 0;
+}
+static inline int pthread_spin_destroy(pthread_spinlock_t *l)
+{
+    (void)l;
+    return 0;
+}
+static inline int pthread_spin_lock(pthread_spinlock_t *l)
+{
+    qemu_spin_lock(l);
+    return 0;
+}
+static inline int pthread_spin_unlock(pthread_spinlock_t *l)
+{
+    qemu_spin_unlock(l);
+    return 0;
+}
+#endif
+
 typedef struct FemuCtrl FemuCtrl;
 typedef struct NvmeNamespace NvmeNamespace;
 

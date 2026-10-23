@@ -24,6 +24,12 @@ static void mbe_numa_bind(void *addr, int64_t len)
         femu_err("backend: ignoring FEMU_MBE_INTERLEAVE=%s (want on|0|1)\n", il);
         return;
     }
+#ifndef SYS_mbind
+    /* mbind(2) is Linux-only; there is no NUMA node to place the buffer on. */
+    femu_err("backend: ignoring FEMU_MBE_INTERLEAVE=%s (not on Linux)\n", il);
+    (void)addr;
+    (void)len;
+#else
     int mode = strcmp(il, "on") ? 2 /* MPOL_BIND */ : 3 /* MPOL_INTERLEAVE */;
     unsigned long nodemask = strcmp(il, "on") ? (1ul << atoi(il)) : 0x3ul;
 
@@ -50,6 +56,7 @@ static void mbe_numa_bind(void *addr, int64_t len)
         femu_log("backend: %ld MB bound via FEMU_MBE_INTERLEAVE=%s\n",
                  (long)(len >> 20), il);
     }
+#endif
 }
 
 /*

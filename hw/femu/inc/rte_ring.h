@@ -95,9 +95,28 @@ extern "C" {
 #include <stdint.h>
 #include <sys/queue.h>
 #include <errno.h>
+#include "rte_branch_prediction.h"
+
+/*
+ * The ring was written against DPDK's x86 helpers. The pause hint and the
+ * compare-and-swap are the only two it needs, so use the compiler's atomics
+ * where the x86 headers do not exist (arm64 hosts, for example).
+ */
+#if defined(__x86_64__) || defined(__i386__)
 #include <xmmintrin.h>
 #include "rte_atomic_x86.h"
-#include "rte_branch_prediction.h"
+#define rte_pause_hint() _mm_pause()
+#else
+#define rte_pause_hint() __asm__ __volatile__("yield" ::: "memory")
+static inline int
+rte_atomic32_cmpset(volatile uint32_t *dst, uint32_t exp, uint32_t src)
+{
+    return __atomic_compare_exchange_n(dst, &exp, src, 0,
+                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+#define rte_smp_wmb() __atomic_thread_fence(__ATOMIC_SEQ_CST)
+#define rte_smp_rmb() __atomic_thread_fence(__ATOMIC_SEQ_CST)
+#endif
 #define  __rte_always_inline inline
 
 
@@ -359,7 +378,7 @@ update_tail(struct rte_ring_headtail *ht, uint32_t old_val, uint32_t new_val,
 	 */
 	if (!single)
 		while (unlikely(ht->tail != old_val))
-            _mm_pause();
+            rte_pause_hint();
 
 	ht->tail = new_val;
 }

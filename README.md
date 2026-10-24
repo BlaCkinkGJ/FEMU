@@ -154,8 +154,8 @@ BBSSD launcher needs about 17 GiB of free RAM. Full details, including the
 guest kernel each mode needs:
 [requirements.md](hw/femu/docs/getting-started/requirements.md).
 
-On an arm64 Mac, [macOS on Apple silicon](#macos-on-apple-silicon) builds the
-same device models for an arm64 guest under HVF.
+To build on an arm64 Mac and run the device models against an arm64 guest
+under HVF, see [macOS on Apple silicon](#macos-on-apple-silicon).
 
 ### [Host Environment Compatibility](hw/femu/docs/getting-started/requirements.md#operating-system-and-cpu)
 
@@ -180,10 +180,10 @@ build errors: [build.md](hw/femu/docs/getting-started/build.md).
 
 ### macOS on Apple silicon
 
-FEMU targets an x86_64 Linux host. An arm64 Mac cannot run that build, but the
-device models compile and run against an arm64 guest under HVF, which is enough
-to develop against and to check every mode. HVF timings are not comparable to
-KVM ones, so measure on an x86_64 Linux host.
+FEMU targets an x86_64 Linux host. On an arm64 Mac the same device models build
+for an arm64 guest and run under HVF, which is enough to work on them and to
+check every mode. HVF timings do not compare to KVM ones, so measure on an
+x86_64 Linux host.
 
 <!-- femu-untested: needs an arm64 Mac, CI runners are x86_64 -->
 ```sh
@@ -200,20 +200,21 @@ make -j"$(sysctl -n hw.ncpu)"
 `-Dfuse=disabled` and `-Dpvg=disabled` skip two optional features that newer
 macOS SDKs no longer build.
 
-The `run-*-arm64.sh` scripts cover every mode: `nossd`, `nossd-hiops`,
+There is a `run-*-arm64.sh` script for every mode: `nossd`, `nossd-hiops`,
 `blackbox`, `blackbox-fdp`, `zns`, `kvssd`, `csd`, `whitebox` and `cxlssd`.
 They share the QEMU command line in
 [run-femu-arm64.sh](hw/femu/scripts/run-femu-arm64.sh) and default the
-forwarded SSH port to 2222, because 8080 is often taken on a desktop. The
-machine is `virt` with edk2 firmware instead of q35 with SeaBIOS and the disk
-uses `aio=threads`, because Darwin has no native AIO. The BBSSD family exposes
-4 GiB rather than 12 GiB, so the device backend fits next to the guest on a
-16 GiB Mac.
+forwarded SSH port to 2222, because 8080 is often taken on a desktop.
 
-Two guest limits remain. The CXL SSD realizes, but the arm64 Ubuntu image
-ships no CXL kernel modules, so the guest never binds it. OCSSD attaches as an
-ordinary block device, while the host-managed interface it is meant for needs
-a guest kernel between 4.17 and 5.14 or SPDK.
+The machine is `virt` with edk2 firmware instead of q35 with SeaBIOS, and the
+disk uses `aio=threads` because Darwin has no native AIO. The BBSSD family
+exposes 4 GiB rather than 12 GiB, so the device backend fits next to the guest
+on a 16 GiB Mac.
+
+The CXL SSD realizes, but the arm64 Ubuntu image ships no CXL kernel modules,
+so the guest never binds it. OCSSD attaches as an ordinary block device, while
+the host-managed interface it is meant for needs a guest kernel between 4.17
+and 5.14 or SPDK.
 
 ## Quick Start
 
